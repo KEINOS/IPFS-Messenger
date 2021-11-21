@@ -1,4 +1,4 @@
-module github.com/KEINOS/IPFS_Messenger
+module github.com/KEINOS/IPFS-Messenger
 
 go 1.16
 
