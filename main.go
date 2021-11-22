@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/KEINOS/go-utiles/util"
 	"github.com/libp2p/go-libp2p"
@@ -15,9 +14,6 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 	"github.com/pkg/errors"
 )
-
-// DiscoveryInterval is how often we re-publish our mDNS records.
-const DiscoveryInterval = time.Hour
 
 // DiscoveryServiceTag is used in our mDNS advertisements to discover other chat peers.
 const DiscoveryServiceTag = "pubsub-chat-example"
@@ -47,7 +43,7 @@ func Run() error {
 	}
 
 	// setup local mDNS discovery
-	if err := setupDiscovery(h); err != nil {
+	if err = setupDiscovery(h); err != nil {
 		return errors.Wrap(err, "failed to setup local mDNS discovery")
 	}
 
@@ -89,10 +85,11 @@ func defaultNick(p peer.ID) string {
 // shortID returns the last 8 chars of a base58-encoded peer id.
 func shortID(p peer.ID) string {
 	pretty := p.Pretty()
+
 	return pretty[len(pretty)-8:]
 }
 
-// discoveryNotifee gets notified when we find a new peer via mDNS discovery
+// discoveryNotifee gets notified when we find a new peer via mDNS discovery.
 type discoveryNotifee struct {
 	h host.Host
 }
@@ -102,8 +99,8 @@ type discoveryNotifee struct {
 // support PubSub.
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 	fmt.Printf("discovered new peer %s\n", pi.ID.Pretty())
-	err := n.h.Connect(context.Background(), pi)
-	if err != nil {
+
+	if err := n.h.Connect(context.Background(), pi); err != nil {
 		fmt.Printf("error connecting to peer %s: %s\n", pi.ID.Pretty(), err)
 	}
 }
@@ -111,7 +108,14 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 // setupDiscovery creates an mDNS discovery service and attaches it to the libp2p Host.
 // This lets us automatically discover peers on the same LAN and connect to them.
 func setupDiscovery(h host.Host) error {
+	serviceName := DiscoveryServiceTag
+
 	// setup mDNS discovery to find local peers
-	s := mdns.NewMdnsService(h, DiscoveryServiceTag, &discoveryNotifee{h: h})
+	s := mdns.NewMdnsService(
+		h,
+		serviceName,
+		&discoveryNotifee{h: h},
+	)
+
 	return s.Start()
 }

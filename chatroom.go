@@ -38,7 +38,9 @@ type ChatMessage struct {
 
 // JoinChatRoom tries to subscribe to the PubSub topic for the room name, returning
 // a ChatRoom on success.
-func JoinChatRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, nickname string, roomName string) (*ChatRoom, error) {
+func JoinChatRoom(
+	ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, nickname string, roomName string,
+) (*ChatRoom, error) {
 	// join the pubsub topic
 	topic, err := ps.Join(topicName(roomName))
 	if err != nil {
@@ -64,6 +66,7 @@ func JoinChatRoom(ctx context.Context, ps *pubsub.PubSub, selfID peer.ID, nickna
 
 	// start reading messages from the subscription in a loop
 	go cr.readLoop()
+
 	return cr, nil
 }
 
@@ -74,10 +77,12 @@ func (cr *ChatRoom) Publish(message string) error {
 		SenderID:   cr.self.Pretty(),
 		SenderNick: cr.nick,
 	}
+
 	msgBytes, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
+
 	return cr.topic.Publish(cr.ctx, msgBytes)
 }
 
@@ -91,13 +96,17 @@ func (cr *ChatRoom) readLoop() {
 		msg, err := cr.sub.Next(cr.ctx)
 		if err != nil {
 			close(cr.Messages)
+
 			return
 		}
+
 		// only forward messages delivered by others
 		if msg.ReceivedFrom == cr.self {
 			continue
 		}
+
 		cm := new(ChatMessage)
+
 		err = json.Unmarshal(msg.Data, cm)
 		if err != nil {
 			continue

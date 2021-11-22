@@ -42,15 +42,16 @@ func Test_main(t *testing.T) {
 	}()
 
 	input := []byte("/quit")
+
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = w.Write(input)
-	if err != nil {
+	if _, err = w.Write(input); err != nil {
 		t.Error(err)
 	}
+
 	w.Close()
 
 	// Run main

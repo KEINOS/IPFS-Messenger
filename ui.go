@@ -26,12 +26,8 @@ type ChatUI struct {
 	doneCh  chan struct{}
 }
 
-// NewChatUI returns a new ChatUI struct that controls the text UI.
-// It won't actually do anything until you call Run().
-func NewChatUI(cr *ChatRoom) *ChatUI {
-	app := tview.NewApplication()
-
-	// make a text view to contain our chat messages
+// makeTextView makes a text view to contain our chat messages.
+func makeMsgBox(app *tview.Application, cr *ChatRoom) *tview.TextView {
 	msgBox := tview.NewTextView()
 	msgBox.SetDynamicColors(true)
 	msgBox.SetBorder(true)
@@ -40,32 +36,39 @@ func NewChatUI(cr *ChatRoom) *ChatUI {
 	// text views are io.Writers, but they don't automatically refresh.
 	// this sets a change handler to force the app to redraw when we get
 	// new messages to display.
-	msgBox.SetChangedFunc(func() {
-		app.Draw()
-	})
+	msgBox.SetChangedFunc(func() { app.Draw() })
+
+	return msgBox
+}
+
+// NewChatUI returns a new ChatUI struct that controls the text UI.
+// It won't actually do anything until you call Run().
+func NewChatUI(cr *ChatRoom) *ChatUI {
+	app := tview.NewApplication()
+
+	// make a text view to contain our chat messages
+	msgBox := makeMsgBox(app, cr)
 
 	// an input field for typing messages into
 	inputCh := make(chan string, 32)
-	input := tview.NewInputField().
-		SetLabel(cr.nick + " > ").
-		SetFieldWidth(0).
-		SetFieldBackgroundColor(tcell.ColorBlack)
+	input := tview.NewInputField().SetLabel(cr.nick + " > ").SetFieldWidth(0).SetFieldBackgroundColor(tcell.ColorBlack)
 
 	// the done func is called when the user hits enter, or tabs out of the field
 	input.SetDoneFunc(func(key tcell.Key) {
 		if key != tcell.KeyEnter {
-			// we don't want to do anything if they just tabbed away
-			return
+			return // we don't want to do anything if they just tabbed away
 		}
+
 		line := input.GetText()
+
 		if len(line) == 0 {
-			// ignore blank lines
-			return
+			return // ignore blank lines
 		}
 
 		// bail if requested
 		if line == "/quit" {
 			app.Stop()
+
 			return
 		}
 
@@ -82,16 +85,11 @@ func NewChatUI(cr *ChatRoom) *ChatUI {
 
 	// chatPanel is a horizontal box with messages on the left and peers on the right
 	// the peers list takes 20 columns, and the messages take the remaining space
-	chatPanel := tview.NewFlex().
-		AddItem(msgBox, 0, 1, false).
-		AddItem(peersList, 20, 1, false)
+	chatPanel := tview.NewFlex().AddItem(msgBox, 0, 1, false).AddItem(peersList, 20, 1, false)
 
 	// flex is a vertical box with the chatPanel on top and the input field at the bottom.
 
-	flex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(chatPanel, 0, 1, false).
-		AddItem(input, 1, 1, true)
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(chatPanel, 0, 1, false).AddItem(input, 1, 1, true)
 
 	app.SetRoot(flex, true)
 
@@ -109,7 +107,7 @@ func NewChatUI(cr *ChatRoom) *ChatUI {
 // the event loop for the text UI.
 func (ui *ChatUI) Run() error {
 	if !isatty.IsTerminal(os.Stdout.Fd()) || !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-		return errors.New("Not a tty connection")
+		return errors.New("not a tty connection")
 	}
 
 	go ui.handleEvents()
@@ -118,7 +116,7 @@ func (ui *ChatUI) Run() error {
 	return ui.app.Run()
 }
 
-// end signals the event loop to exit gracefully
+// end signals the event loop to exit gracefully.
 func (ui *ChatUI) end() {
 	ui.doneCh <- struct{}{}
 }
@@ -169,6 +167,7 @@ func (ui *ChatUI) handleEvents() {
 			if err != nil {
 				printErr("publish error: %s", err)
 			}
+
 			ui.displaySelfMessage(input)
 
 		case m := <-ui.cr.Messages:
