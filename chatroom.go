@@ -86,6 +86,7 @@ func (cr *ChatRoom) Publish(message string) error {
 	return cr.topic.Publish(cr.ctx, msgBytes)
 }
 
+// ListPeers returns a list of peer IDs in the room of the topic.
 func (cr *ChatRoom) ListPeers() []peer.ID {
 	return cr.ps.ListPeers(topicName(cr.roomName))
 }

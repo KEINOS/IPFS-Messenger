@@ -22,6 +22,7 @@ func main() {
 	util.ExitOnErr(Run())
 }
 
+// Run is the actual function of main.
 func Run() error {
 	// parse some flags to set our nickname and the room to join
 	nickFlag := flag.String("nick", "", "nickname to use in chat. will be generated if empty")
