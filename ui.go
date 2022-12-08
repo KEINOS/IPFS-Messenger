@@ -1,14 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/mattn/go-isatty"
 	"github.com/rivo/tview"
 )
 
@@ -106,10 +103,6 @@ func NewChatUI(cr *ChatRoom) *ChatUI {
 // Run starts the chat event loop in the background, then starts
 // the event loop for the text UI.
 func (ui *ChatUI) Run() error {
-	if !isatty.IsTerminal(os.Stdout.Fd()) || !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-		return errors.New("not a tty connection")
-	}
-
 	go ui.handleEvents()
 	defer ui.end()
 
